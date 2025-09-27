@@ -1,42 +1,41 @@
 package dao;
 
-import entity.*;
+import entity.Paiement;
+import entity.StatutPaiement;
+import entity.TypePaiement;
 import java.sql.*;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class PaiementDAO {
+    private Connection connection;
+
+    public PaiementDAO() throws SQLException {
+        this.connection = DatabaseConnection.getInstance().getConnection();
+    }
 
     public void create(Paiement paiement) throws SQLException {
-        String sql = "INSERT INTO paiement (id_paiement, id_abonnement, date_echeance, " +
-                "date_paiement, type_paiement, statut, montant) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO paiement (idPaiement, idAbonnement, dateEcheance, datePaiement, typePaiement, statut, montant) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, paiement.getIdPaiement());
             stmt.setString(2, paiement.getIdAbonnement());
             stmt.setDate(3, Date.valueOf(paiement.getDateEcheance()));
             stmt.setDate(4, paiement.getDatePaiement() != null ? Date.valueOf(paiement.getDatePaiement()) : null);
-            stmt.setString(5, paiement.getTypePaiement().name());
+            stmt.setString(5, paiement.getTypePaiement() != null ? paiement.getTypePaiement().name() : null);
             stmt.setString(6, paiement.getStatut().name());
-            stmt.setBigDecimal(7, paiement.getMontant());
+            stmt.setDouble(7, paiement.getMontant());
 
             stmt.executeUpdate();
-            System.out.println("Paiement created successfully!");
         }
     }
 
     public Optional<Paiement> findById(String id) throws SQLException {
-        String sql = "SELECT * FROM paiement WHERE id_paiement = ?";
+        String sql = "SELECT * FROM paiement WHERE idPaiement = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, id);
             ResultSet rs = stmt.executeQuery();
 
@@ -48,12 +47,10 @@ public class PaiementDAO {
     }
 
     public List<Paiement> findByAbonnement(String idAbonnement) throws SQLException {
+        String sql = "SELECT * FROM paiement WHERE idAbonnement = ? ORDER BY dateEcheance DESC";
         List<Paiement> paiements = new ArrayList<>();
-        String sql = "SELECT * FROM paiement WHERE id_abonnement = ? ORDER BY date_echeance DESC";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, idAbonnement);
             ResultSet rs = stmt.executeQuery();
 
@@ -64,15 +61,25 @@ public class PaiementDAO {
         return paiements;
     }
 
-    public List<Paiement> findUnpaidByAbonnement(String idAbonnement) throws SQLException {
+    public List<Paiement> findAll() throws SQLException {
+        String sql = "SELECT * FROM paiement ORDER BY dateEcheance DESC";
         List<Paiement> paiements = new ArrayList<>();
-        String sql = "SELECT * FROM paiement " +
-                "WHERE id_abonnement = ? AND statut IN ('NON_PAYE', 'EN_RETARD') " +
-                "ORDER BY date_echeance";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
 
+            while (rs.next()) {
+                paiements.add(mapResultSetToPaiement(rs));
+            }
+        }
+        return paiements;
+    }
+
+    public List<Paiement> findUnpaidByAbonnement(String idAbonnement) throws SQLException {
+        String sql = "SELECT * FROM paiement WHERE idAbonnement = ? AND statut IN ('NON_PAYE', 'EN_RETARD') ORDER BY dateEcheance";
+        List<Paiement> paiements = new ArrayList<>();
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, idAbonnement);
             ResultSet rs = stmt.executeQuery();
 
@@ -84,15 +91,10 @@ public class PaiementDAO {
     }
 
     public List<Paiement> findLastPayments(int limit) throws SQLException {
+        String sql = "SELECT * FROM paiement WHERE datePaiement IS NOT NULL ORDER BY datePaiement DESC LIMIT ?";
         List<Paiement> paiements = new ArrayList<>();
-        String sql = "SELECT * FROM paiement " +
-                "WHERE statut = 'PAYE' " +
-                "ORDER BY date_paiement DESC " +
-                "LIMIT ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, limit);
             ResultSet rs = stmt.executeQuery();
 
@@ -104,51 +106,48 @@ public class PaiementDAO {
     }
 
     public void update(Paiement paiement) throws SQLException {
-        String sql = "UPDATE paiement SET date_echeance = ?, date_paiement = ?, " +
-                "type_paiement = ?, statut = ?, montant = ? WHERE id_paiement = ?";
+        String sql = "UPDATE paiement SET dateEcheance = ?, datePaiement = ?, typePaiement = ?, statut = ?, montant = ? WHERE idPaiement = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(paiement.getDateEcheance()));
             stmt.setDate(2, paiement.getDatePaiement() != null ? Date.valueOf(paiement.getDatePaiement()) : null);
-            stmt.setString(3, paiement.getTypePaiement().name());
+            stmt.setString(3, paiement.getTypePaiement() != null ? paiement.getTypePaiement().name() : null);
             stmt.setString(4, paiement.getStatut().name());
-            stmt.setBigDecimal(5, paiement.getMontant());
+            stmt.setDouble(5, paiement.getMontant());
             stmt.setString(6, paiement.getIdPaiement());
 
             stmt.executeUpdate();
-            System.out.println("Paiement updated successfully!");
         }
     }
 
     public void delete(String id) throws SQLException {
-        String sql = "DELETE FROM paiement WHERE id_paiement = ?";
+        String sql = "DELETE FROM paiement WHERE idPaiement = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, id);
             stmt.executeUpdate();
-            System.out.println("Paiement deleted successfully!");
         }
     }
 
     private Paiement mapResultSetToPaiement(ResultSet rs) throws SQLException {
         Paiement paiement = new Paiement();
 
-        paiement.setIdPaiement(rs.getString("id_paiement"));
-        paiement.setIdAbonnement(rs.getString("id_abonnement"));
-        paiement.setDateEcheance(rs.getDate("date_echeance").toLocalDate());
+        paiement.setIdPaiement(rs.getString("idPaiement"));
+        paiement.setIdAbonnement(rs.getString("idAbonnement"));
+        paiement.setDateEcheance(rs.getDate("dateEcheance").toLocalDate());
 
-        Date datePaiement = rs.getDate("date_paiement");
+        Date datePaiement = rs.getDate("datePaiement");
         if (datePaiement != null) {
             paiement.setDatePaiement(datePaiement.toLocalDate());
         }
 
-        paiement.setTypePaiement(TypePaiement.valueOf(rs.getString("type_paiement")));
+        String typePaiement = rs.getString("typePaiement");
+        if (typePaiement != null) {
+            paiement.setTypePaiement(TypePaiement.valueOf(typePaiement));
+        }
+
         paiement.setStatut(StatutPaiement.valueOf(rs.getString("statut")));
-        paiement.setMontant(rs.getBigDecimal("montant"));
+        paiement.setMontant(rs.getDouble("montant"));
 
         return paiement;
     }
