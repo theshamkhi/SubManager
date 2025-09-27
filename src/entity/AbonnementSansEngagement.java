@@ -1,6 +1,5 @@
 package entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class AbonnementSansEngagement extends Abonnement {
@@ -9,12 +8,12 @@ public class AbonnementSansEngagement extends Abonnement {
         super();
     }
 
-    public AbonnementSansEngagement(String nomService, BigDecimal montantMensuel, LocalDate dateDebut) {
-        super(nomService, montantMensuel, dateDebut);
+    public AbonnementSansEngagement(String nomService, double montantMensuel, LocalDate dateDebut, LocalDate dateFin) {
+        super(nomService, montantMensuel, dateDebut, dateFin);
     }
 
     @Override
-    public String getTypeAbonnement() {
+    public String getType() {
         return "SANS_ENGAGEMENT";
     }
 }

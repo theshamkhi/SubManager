@@ -1,29 +1,30 @@
 package entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class AbonnementAvecEngagement extends Abonnement {
-    private Integer dureeEngagementMois;
+    private int dureeEngagementMois;
 
     public AbonnementAvecEngagement() {
         super();
     }
 
-    public AbonnementAvecEngagement(String nomService, BigDecimal montantMensuel,
-                                    LocalDate dateDebut, Integer dureeEngagementMois) {
-        super(nomService, montantMensuel, dateDebut);
+    public AbonnementAvecEngagement(String nomService, double montantMensuel, LocalDate dateDebut,
+                                    LocalDate dateFin, int dureeEngagementMois) {
+        super(nomService, montantMensuel, dateDebut, dateFin);
         this.dureeEngagementMois = dureeEngagementMois;
-        this.dateFin = dateDebut.plusMonths(dureeEngagementMois);
     }
 
+    public int getDureeEngagementMois() { return dureeEngagementMois; }
+    public void setDureeEngagementMois(int dureeEngagementMois) { this.dureeEngagementMois = dureeEngagementMois; }
+
     @Override
-    public String getTypeAbonnement() {
+    public String getType() {
         return "AVEC_ENGAGEMENT";
     }
 
-    public Integer getDureeEngagementMois() { return dureeEngagementMois; }
-    public void setDureeEngagementMois(Integer dureeEngagementMois) {
-        this.dureeEngagementMois = dureeEngagementMois;
+    @Override
+    public String toString() {
+        return super.toString().replace("}", String.format(", engagement=%d mois}", dureeEngagementMois));
     }
 }
