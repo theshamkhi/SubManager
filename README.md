@@ -155,7 +155,3 @@ src/
 - **Détection intelligente des impayés**
 - **Rapports avec agrégations complexes** utilisant Collectors
 - **Gestion sûre des valeurs nulles** avec Optional
-
----
-
-⭐ **Mohammed Shamkhi**
